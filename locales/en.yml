@@ -116,3 +116,4 @@ en:
         stopped
     stopping_vm: 'Stopping the virtual machine...'
     waiting_for_ssh_connection: 'Waiting for SSH connection...'
+    cloning_vm: 'Cloning the VM...'
