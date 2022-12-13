@@ -48,46 +48,46 @@ module VagrantPlugins
 						vmid: vm_id,
 						description: "#{provider_config.vm_name_prefix}#{env[:machine].name}",
 					}
-					# delete existing network interfaces from template
-					to_delete = template_config.keys.select{|key| key.to_s.match(/^net/) }
-					params[:delete] = to_delete.join(",") if not to_delete.empty?
-					# net0 is the provisioning network, derived from forwarded_port
-					net_num = 0
-					hostname = vm_config.hostname || env[:machine].name
-					netdev0 = [
-						"type=user",
-						"id=net0",
-						"hostname=#{hostname}",
-						"hostfwd=tcp:#{@node_ip}:#{@guest_port}-:22",	# selected_node's primary ip and port (22000 + vm_id)
-					]
-					device0 = [
-						"#{provider_config.qemu_nic_model}",
-						"netdev=net0",
-						"bus=pci.0",
-						"addr=0x12",					# starting point for network interfaces
-						"id=net0",
-						"bootindex=299"
-					]
-					params[:args] = "-netdev " + netdev0.join(",") + " -device " + device0.join(",")
-					# now add a network device for every public_network or private_network
-					# ip addresses are ignored here, as we can't configure anything inside the qemu vm.
-					# at least we can set the predefined mac address and a bridge
-					net_num += 1
-					vm_config.networks.each do |type, options|
-						next if not type.match(/^p.*_network$/)
-						nic = provider_config.qemu_nic_model
-						nic += "=#{options[:macaddress]}" if options[:macaddress]
-						nic += ",bridge=#{options[:bridge]}" if options[:bridge]
-						net = 'net' + net_num.to_s
-						params[net] = nic
-						net_num += 1
-					end
+					# # delete existing network interfaces from template
+					# to_delete = template_config.keys.select{|key| key.to_s.match(/^net/) }
+					# params[:delete] = to_delete.join(",") if not to_delete.empty?
+					# # net0 is the provisioning network, derived from forwarded_port
+					# net_num = 0
+					# hostname = vm_config.hostname || env[:machine].name
+					# netdev0 = [
+					# 	"type=user",
+					# 	"id=net0",
+					# 	"hostname=#{hostname}",
+					# 	"hostfwd=tcp:#{@node_ip}:#{@guest_port}-:22",	# selected_node's primary ip and port (22000 + vm_id)
+					# ]
+					# device0 = [
+					# 	"#{provider_config.qemu_nic_model}",
+					# 	"netdev=net0",
+					# 	"bus=pci.0",
+					# 	"addr=0x12",					# starting point for network interfaces
+					# 	"id=net0",
+					# 	"bootindex=299"
+					# ]
+					# params[:args] = "-netdev " + netdev0.join(",") + " -device " + device0.join(",")
+					# # now add a network device for every public_network or private_network
+					# # ip addresses are ignored here, as we can't configure anything inside the qemu vm.
+					# # at least we can set the predefined mac address and a bridge
+					# net_num += 1
+					# vm_config.networks.each do |type, options|
+					# 	next if not type.match(/^p.*_network$/)
+					# 	nic = provider_config.qemu_nic_model
+					# 	nic += "=#{options[:macaddress]}" if options[:macaddress]
+					# 	nic += ",bridge=#{options[:bridge]}" if options[:bridge]
+					# 	net = 'net' + net_num.to_s
+					# 	params[net] = nic
+					# 	net_num += 1
+					# end
 
-					# some more individual settings
-					params[:ide2] = "#{provider_config.qemu_iso},media=cdrom" if provider_config.qemu_iso
-					params[:sockets] = "#{provider_config.qemu_sockets}".to_i if provider_config.qemu_sockets
-					params[:cores] = "#{provider_config.qemu_cores}".to_i if provider_config.qemu_cores
-					params[:balloon] = "#{provider_config.vm_memory}".to_i if provider_config.vm_memory and provider_config.vm_memory < template_config[:balloon]
+					# # some more individual settings
+					# params[:ide2] = "#{provider_config.qemu_iso},media=cdrom" if provider_config.qemu_iso
+					# params[:sockets] = "#{provider_config.qemu_sockets}".to_i if provider_config.qemu_sockets
+					# params[:cores] = "#{provider_config.qemu_cores}".to_i if provider_config.qemu_cores
+					# params[:balloon] = "#{provider_config.vm_memory}".to_i if provider_config.vm_memory and provider_config.vm_memory < template_config[:balloon]
 					params[:memory] = "#{provider_config.vm_memory}".to_i if provider_config.vm_memory
 					params
 				end
