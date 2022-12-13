@@ -95,6 +95,7 @@ module VagrantPlugins
 		def self.action_provision
 			Vagrant::Action::Builder.new.tap do |b|
 				b.use ConfigValidate
+        b.use ConnectProxmox
 				b.use Call, IsCreated do |env1, b1|
 					if env1[:result]
 						b1.use Call, IsStopped do |env2, b2|
@@ -115,6 +116,7 @@ module VagrantPlugins
 		def self.action_halt
 			Vagrant::Action::Builder.new.tap do |b|
 				b.use ConfigValidate
+        b.use ConnectProxmox
 				b.use Call, IsCreated do |env1, b1|
 					if env1[:result]
 						b1.use Call, IsStopped do |env2, b2|
@@ -172,6 +174,7 @@ module VagrantPlugins
 		def self.action_ssh
 			Vagrant::Action::Builder.new.tap do |b|
 				b.use ConfigValidate
+        b.use ConnectProxmox
 				b.use Call, IsCreated do |env1, b1|
 					if env1[:result]
 						b1.use Call, IsStopped do |env2, b2|
@@ -191,6 +194,7 @@ module VagrantPlugins
 		def self.action_ssh_run
 			Vagrant::Action::Builder.new.tap do |b|
 				b.use ConfigValidate
+        b.use ConnectProxmox
 				b.use Call, IsCreated do |env1, b1|
 					if env1[:result]
 						b1.use Call, IsStopped do |env2, b2|
