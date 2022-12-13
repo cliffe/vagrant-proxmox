@@ -15,6 +15,7 @@ module VagrantPlugins
       attr_accessor :task_timeout
       attr_accessor :task_status_check_interval
       attr_accessor :imgcopy_timeout
+      attr_accessor :vm_info_cache
 
       def initialize(api_url, opts = {})
         @api_url = api_url
@@ -22,6 +23,7 @@ module VagrantPlugins
         @task_timeout = opts[:task_timeout] || 60
         @task_status_check_interval = opts[:task_status_check_interval] || 2
         @imgcopy_timeout = opts[:imgcopy_timeout] || 120
+        @vm_info_cache = {}
       end
 
       def login(username: required('username'), password: required('password'))
@@ -56,6 +58,8 @@ module VagrantPlugins
       end
 
       def wait_for_completion(task_response: required('task_response'), timeout_message: required('timeout_message'))
+
+        puts task_response[:data].to_s
         task_upid = task_response[:data]
         timeout = task_timeout
         task_type = /UPID:.*?:.*?:.*?:.*?:(.*)?:.*?:.*?:/.match(task_upid)[1]
@@ -76,6 +80,29 @@ module VagrantPlugins
         vm_info = get_vm_info vm_id
         response = delete "/nodes/#{vm_info[:node]}/#{vm_info[:type]}/#{vm_id}"
         wait_for_completion task_response: response, timeout_message: 'vagrant_proxmox.errors.destroy_vm_timeout'
+      end
+
+      def qemu_agent_get_ip(vm_id)
+        vm_info = get_vm_info vm_id
+        begin
+          response = get "/nodes/#{vm_info[:node]}/#{vm_info[:type]}/#{vm_id}/agent/network-get-interfaces"
+        rescue ApiError::ServerError
+          return nil
+        rescue RestClient::InternalServerError
+          return nil
+        rescue VagrantPlugins::Proxmox::ApiError::ServerError
+          return nil
+        end
+
+        # select the first nic (0 = lo, 1 = first nic)
+        result = response.dig(:data, :result, 1, :"ip-addresses")
+        # find an IPv4 address and return it
+        result.each do |ip_addr|
+          if ip_addr.dig(:"ip-address-type") == "ipv4"
+            return ip_addr.dig(:"ip-address")
+          end
+        end
+        nil
       end
 
       def create_vm(node: required('node'), vm_type: required('node'), params: required('params'))
@@ -171,17 +198,23 @@ module VagrantPlugins
       end
 
       # This is called every time to retrieve the node and vm_type, hence on large
-      # installations this could be a huge amount of data. Probably an optimization
-      # with a buffer for the machine info could be considered.
+      # installations this could be a huge amount of data.
+      # @vm_info_cache is used to buffer the info we need, but maybe this should be
+      # read from the Vagrantfile -- do we need to get this from proxmox?
 
       private
 
       def get_vm_info(vm_id)
-        response = get '/cluster/resources?type=vm'
-        response[:data]
-          .select { |m| m[:id] =~ /^[a-z]*\/#{vm_id}$/ }
-          .map { |m| { id: vm_id, type: /^(.*)\/(.*)$/.match(m[:id])[1], node: m[:node] } }
-          .first
+        # only look up each VM once -- and cache the results
+        if @vm_info_cache.key? vm_id
+          @vm_info_cache[vm_id]
+        else
+          response = get '/cluster/resources?type=vm'
+          @vm_info_cache[vm_id] = response[:data]
+            .select { |m| m[:id] =~ /^[a-z]*\/#{vm_id}$/ }
+            .map { |m| { id: vm_id, type: /^(.*)\/(.*)$/.match(m[:id])[1], node: m[:node] } }
+            .first
+        end
       end
 
       private

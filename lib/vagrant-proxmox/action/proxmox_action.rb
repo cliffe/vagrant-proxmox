@@ -11,9 +11,18 @@ module VagrantPlugins
 
         def get_machine_ip_address(env)
           config = env[:machine].provider_config
+          env[:ui].detail 'Getting IP address...'
           if config.vm_type == :qemu
-            env[:machine].config.vm.networks.select \
-              { |type, _| type == :forwarded_port }.first[1][:host_ip] || nil
+            if config.disable_adjust_forwarded_port = true
+              env[:ui].detail 'IP address via qemu agent...'
+              node, vm_id = env[:machine].id.split '/'
+
+              connection(env).qemu_agent_get_ip vm_id
+
+            else
+              env[:machine].config.vm.networks.select \
+                { |type, _| type == :forwarded_port }.first[1][:host_ip] || nil
+            end
           else
             env[:machine].config.vm.networks.select \
               { |type, _| type == :public_network }.first[1][:ip] || nil
