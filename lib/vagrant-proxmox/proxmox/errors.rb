@@ -9,6 +9,9 @@ module VagrantPlugins
 			class ConnectionError < StandardError
 			end
 
+      class CommunicationError < StandardError
+			end
+
 			class NotImplemented < StandardError
 			end
 
