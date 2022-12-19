@@ -13,11 +13,13 @@ module VagrantPlugins
 
         def call env
           if env[:machine].provider_config.selected_node != Config::UNSET_VALUE
-            if env[:proxmox_nodes].include?(env[:machine].provider_config.selected_node)
-              env[:proxmox_selected_node] = env[:machine].provider_config.selected_node
-            else
-              raise Errors::InvalidNodeError, node: env[:machine].provider_config.selected_node
-            end
+            # optimize by assuming that our congured node is available
+            # if env[:proxmox_nodes].include?(env[:machine].provider_config.selected_node)
+            #   env[:proxmox_selected_node] = env[:machine].provider_config.selected_node
+            # else
+            #   raise Errors::InvalidNodeError, node: env[:machine].provider_config.selected_node
+            # end
+            env[:proxmox_selected_node] = env[:machine].provider_config.selected_node
           else
             env[:proxmox_selected_node] = env[:proxmox_nodes].sample
           end
