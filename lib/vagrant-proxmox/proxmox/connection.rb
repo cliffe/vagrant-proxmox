@@ -157,14 +157,21 @@ module VagrantPlugins
         wait_for_completion task_response: response, timeout_message: 'vagrant_proxmox.errors.shutdown_vm_timeout'
       end
 
+      # when given a large range we can optimise by simply choosing an id randomly
+      # otherwise we list all the possible ids and compare to what's available
       def get_free_vm_id
-        # to avoid collisions in multi-vm setups
-        sleep (rand(1..3) + 0.1 * rand(0..9))
-        response = get '/cluster/resources?type=vm'
-        allowed_vm_ids = vm_id_range.to_set
-        used_vm_ids = response[:data].map { |vm| vm[:vmid] }
-        free_vm_ids = (allowed_vm_ids - used_vm_ids).sort
-        free_vm_ids.empty? ? raise(VagrantPlugins::Proxmox::Errors::NoVmIdAvailable) : free_vm_ids.first
+        if vm_id_range.size > 1000
+          # just randomly choose from within the large range
+          rand(vm_id_range)
+        else
+          # to avoid collisions in multi-vm setups
+          sleep (rand(1..3) + 0.1 * rand(0..9))
+          response = get '/cluster/resources?type=vm'
+          allowed_vm_ids = vm_id_range.to_set
+          used_vm_ids = response[:data].map { |vm| vm[:vmid] }
+          free_vm_ids = (allowed_vm_ids - used_vm_ids).sort
+          free_vm_ids.empty? ? raise(VagrantPlugins::Proxmox::Errors::NoVmIdAvailable) : free_vm_ids.first
+        end
       end
 
       def get_qemu_template_id(template)
