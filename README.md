@@ -1,3 +1,16 @@
+# Fork notes
+This fork focuses on fixes for Qemu VMs, including getting the IP address from
+the agent rather than the Vagrantfile.
+
+Some optimisations, to avoid so many requests to the node for a list of every VM.
+For example, VM IDs are chosen randomly, when a large ID range is provided.
+
+This fork fixes issues to work in our environment, but likely breaks features
+that we are not using ourselves.
+
+If you are not using Proxmox and Qemu, this fork probably is not for you.
+
+
 # Vagrant Proxmox Provider
 
 This is a [Vagrant](http://www.vagrantup.com) plugin that adds a
