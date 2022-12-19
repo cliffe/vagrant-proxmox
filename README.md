@@ -1,14 +1,19 @@
 # Fork notes
-This fork focuses on fixes for Qemu VMs, including getting the IP address from
-the agent rather than the Vagrantfile.
+This fork focuses on features and fixes for Qemu VMs.
+- Read IP address from qemu agent, and wait for IP addr/ssh to become available
+rather than only working with static IPs in the Vagrantfile.
+- Gem updates.
 
 Some optimisations, to avoid so many requests to the node for a list of every VM.
-For example, VM IDs are chosen randomly, when a large ID range is provided.
+- VM IDs are chosen randomly, when a large ID range is provided.
+- Assumes that the congured node is available.
+- Connect once and reuse the connection to Proxmox.
+- Cache some server responses (this could be further improved with persistant caching).
 
 This fork fixes issues to work in our environment, but likely breaks features
 that we are not using ourselves.
 
-If you are not using Proxmox and Qemu, this fork probably is not for you.
+If you are not using Proxmox and Qemu, this fork is probably not for you.
 
 
 # Vagrant Proxmox Provider
