@@ -93,13 +93,14 @@ module VagrantPlugins
         rescue VagrantPlugins::Proxmox::ApiError::ServerError
           return nil
         end
-
         # select the first nic (0 = lo, 1 = first nic)
-        result = response.dig(:data, :result, 1, :"ip-addresses")
-        # find an IPv4 address and return it
-        result.each do |ip_addr|
-          if ip_addr.dig(:"ip-address-type") == "ipv4"
-            return ip_addr.dig(:"ip-address")
+        response.dig(:data, :result).each do |nic|
+          nic.dig(:"ip-addresses").each do |ip_addresses_block|
+            # find an IPv4 address and return it
+            if ip_addresses_block.dig(:"ip-address-type") == "ipv4"
+              ip = ip_addresses_block.dig(:"ip-address")
+              return ip if ip != "127.0.0.1"
+            end
           end
         end
         nil
