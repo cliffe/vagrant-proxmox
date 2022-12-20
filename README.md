@@ -15,6 +15,19 @@ that we are not using ourselves.
 
 If you are not using Proxmox and Qemu, this fork is probably not for you.
 
+## Installing this plugin from source
+Install any required Ruby gems:
+`sudo bundle install`
+
+Build the gem from source:
+`gem build vagrant-proxmox.gemspec`
+
+Install the proxmox vagrant plugin gem:
+`vagrant plugin install ./vagrant-proxmox-0.3.0.gem`
+
+If you make local changes to code a quick-and-dirty way to deploy that for testing:
+`rsync -av /home/USERNAME/vagrant-proxmox/lib/ /home/USERNAME/.vagrant.d/gems/2.7.6/gems/vagrant-proxmox-0.3.0/lib/`
+Where `/home/USERNAME/vagrant-proxmox/` is the location of the code.
 
 # Vagrant Proxmox Provider
 
