@@ -26,17 +26,17 @@ module VagrantPlugins
 
 					retryException = Class.new StandardError
 
-					begin
-						retryable(on: retryException,
-											tries: env[:machine].provider_config.ssh_timeout / env[:machine].provider_config.ssh_status_check_interval + 1,
-											sleep: env[:machine].provider_config.ssh_status_check_interval) do
-							raise retryException unless env[:interrupted] || env[:machine].communicate.ready?
-						end
-					rescue retryException
-						raise VagrantPlugins::Proxmox::Errors::SSHError
-					end
-
-					env[:ui].info I18n.t('vagrant_proxmox.done')
+					# begin
+					# 	retryable(on: retryException,
+					# 						tries: env[:machine].provider_config.ssh_timeout / env[:machine].provider_config.ssh_status_check_interval + 1,
+					# 						sleep: env[:machine].provider_config.ssh_status_check_interval) do
+					# 		raise retryException unless env[:interrupted] || env[:machine].communicate.ready?
+					# 	end
+					# rescue retryException
+					# 	raise VagrantPlugins::Proxmox::Errors::SSHError
+					# end
+          #
+					# env[:ui].info I18n.t('vagrant_proxmox.done')
 
 					next_action env
 				end

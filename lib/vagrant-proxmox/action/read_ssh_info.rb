@@ -34,9 +34,9 @@ module VagrantPlugins
             }
             env[:ui].detail "Found machine_ssh_info #{env[:machine_ssh_info]}"
           rescue => e
-            raise Errors::CommunicationError,
-                  error_msg: "ReadSSHInfo: #{e.message}"
             retry if (retries += 1) < 60 # wait up to 5 mins
+            raise Errors::CommunicationError,
+            error_msg: "ReadSSHInfo: #{e.message}"
             false
           end
           next_action env
