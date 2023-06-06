@@ -27,16 +27,6 @@ module VagrantPlugins
         @task_status_check_interval = opts[:task_status_check_interval] || 2
         @imgcopy_timeout = opts[:imgcopy_timeout] || 600
         @vm_info_cache = {}
-
-        puts "~-" * 100
-        puts "TIMEOUT VALUES #{@task_timeout} - #{@task_status_check_interval}"
-
-        # begin
-        #   vm_info_cache_file = File.read("#{Dir.home}/.vagrant_proxmox_vm_info_cache.json")
-        #   if vm_info_cache_file
-        #     @vm_info_cache = JSON.parse(vm_info_cache_file)
-        #   end
-        # rescue; end # ignore missing file
       end
 
       def login(username: required('username'), password: required('password'))
@@ -54,18 +44,13 @@ module VagrantPlugins
         nodelist[:data].map { |n| n[:node] }
       end
 
-      def get_vm_state(vm_id)
-        vm_info = get_vm_info vm_id
-        if vm_info
-          begin
-            response = get "/nodes/#{vm_info[:node]}/#{vm_info[:type]}/#{vm_id}/status/current"
-            states = { 'running' => :running,
-                       'stopped' => :stopped }
-            states[response[:data][:status]]
-          rescue ApiError::ServerError
-            :not_created
-          end
-        else
+      def get_vm_state(vm_id, node)
+        begin
+          response = get "/nodes/#{node}/qemu/#{vm_id}/status/current"
+          states = { 'running' => :running,
+                     'stopped' => :stopped }
+          states[response[:data][:status]]
+        rescue ApiError::ServerError
           :not_created
         end
       end
@@ -88,17 +73,15 @@ module VagrantPlugins
         end
       end
 
-      def delete_vm(vm_id)
-        vm_info = get_vm_info vm_id
-        response = delete "/nodes/#{vm_info[:node]}/#{vm_info[:type]}/#{vm_id}"
+      def delete_vm(vm_id, node)
+        response = delete "/nodes/#{node}/qemu/#{vm_id}"
         wait_for_completion task_response: response, timeout_message: 'vagrant_proxmox.errors.destroy_vm_timeout'
       end
 
-      def qemu_agent_get_ip(vm_id)
-        vm_info = get_vm_info vm_id
+      def qemu_agent_get_ip(vm_id, node)
         begin
           # binding.irb
-          response = get "/nodes/#{vm_info[:node]}/#{vm_info[:type]}/#{vm_id}/agent/network-get-interfaces"
+          response = get "/nodes/#{node}/qemu/#{vm_id}/agent/network-get-interfaces"
         rescue ApiError::ServerError
           return nil
         rescue RestClient::InternalServerError
@@ -152,21 +135,18 @@ module VagrantPlugins
         response.empty? ? raise(VagrantPlugins::Proxmox::Errors::VMConfigError) : response
       end
 
-      def start_vm(vm_id)
-        vm_info = get_vm_info vm_id
-        response = post "/nodes/#{vm_info[:node]}/#{vm_info[:type]}/#{vm_id}/status/start", nil
+      def start_vm(vm_id, node)
+        response = post "/nodes/#{node}/qemu/#{vm_id}/status/start", nil
         wait_for_completion task_response: response, timeout_message: 'vagrant_proxmox.errors.start_vm_timeout'
       end
 
-      def stop_vm(vm_id)
-        vm_info = get_vm_info vm_id
-        response = post "/nodes/#{vm_info[:node]}/#{vm_info[:type]}/#{vm_id}/status/stop", nil
+      def stop_vm(vm_id, node)
+        response = post "/nodes/#{node}/qemu/#{vm_id}/status/stop", nil
         wait_for_completion task_response: response, timeout_message: 'vagrant_proxmox.errors.stop_vm_timeout'
       end
 
-      def shutdown_vm(vm_id)
-        vm_info = get_vm_info vm_id
-        response = post "/nodes/#{vm_info[:node]}/#{vm_info[:type]}/#{vm_id}/status/shutdown", nil
+      def shutdown_vm(vm_id, node)
+        response = post "/nodes/#{node}/qemu/#{vm_id}/status/shutdown", nil
         wait_for_completion task_response: response, timeout_message: 'vagrant_proxmox.errors.shutdown_vm_timeout'
       end
 

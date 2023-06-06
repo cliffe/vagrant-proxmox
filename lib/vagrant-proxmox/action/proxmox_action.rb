@@ -17,7 +17,7 @@ module VagrantPlugins
               env[:ui].detail 'IP address via qemu agent...'
               node, vm_id = env[:machine].id.split '/'
 
-              connection(env).qemu_agent_get_ip vm_id
+              connection(env).qemu_agent_get_ip vm_id, node
 
             else
               env[:machine].config.vm.networks.select \
