@@ -24,7 +24,7 @@ module VagrantPlugins
 					rescue StandardError => e
 						raise VagrantPlugins::Proxmox::Errors::VMCloneError, proxmox_exit_status: e.message
 					end
-	
+
 					begin
 						vm_id = connection(env).get_free_vm_id
 						params = create_params_qemu(config, env, vm_id, template_vm_id)
