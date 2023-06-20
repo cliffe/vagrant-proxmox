@@ -236,7 +236,7 @@ module VagrantPlugins
       rescue RestClient::NotImplemented
         raise ApiError::NotImplemented
       rescue RestClient::InternalServerError => x
-        raise ApiError::ServerError, "#{x.message} for GET #{api_url}#{path} details: #{response.to_s}"
+        raise ApiError::ServerError, "#{x.message} for GET #{api_url}#{path} details: #{response.to_s} - #{x.inspect}"
       rescue RestClient::Unauthorized
         raise ApiError::UnauthorizedError
       rescue => x
@@ -268,7 +268,7 @@ module VagrantPlugins
       rescue RestClient::NotImplemented
         raise ApiError::NotImplemented
       rescue RestClient::InternalServerError => x
-        raise ApiError::ServerError, "#{x.message} for POST #{api_url}#{path} details: #{response.to_s}"
+        raise ApiError::ServerError, "#{x.message} for POST #{api_url}#{path} details: #{response.to_s} - #{x.inspect}"
       rescue => x
         raise ApiError::ConnectionError, x.message
       end
