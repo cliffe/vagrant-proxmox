@@ -33,6 +33,7 @@ module VagrantPlugins
               :forward_x11      => env[:machine].config.ssh.forward_x11,
             }
             env[:ui].detail "Found machine_ssh_info #{env[:machine_ssh_info]}"
+            sleep 3
           rescue => e
             retry if (retries += 1) < 60 # wait up to 5 mins
             raise Errors::CommunicationError,
