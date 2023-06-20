@@ -25,7 +25,8 @@ module VagrantPlugins
 								if env2[:result]
 									b2.use Provision
 									b2.use StartVm
-									b2.use SyncFolders
+                  b2.use SyncedFolderCleanup
+                  b2.use SyncedFolders
 								else
 									b2.use MessageAlreadyRunning
 								end
@@ -39,7 +40,8 @@ module VagrantPlugins
 									if env2[:result] == :ok
 										b2.use CreateVm
 										b2.use StartVm
-										b2.use SyncFolders
+                    b2.use SyncedFolderCleanup
+                    b2.use SyncedFolders
 									elsif env2[:result] == :file_not_found
 										b2.use MessageFileNotFound
 									elsif env2[:result] == :server_upload_error
@@ -51,7 +53,8 @@ module VagrantPlugins
 									if env2[:result] == :ok
 										b2.use CreateVm
 										b2.use StartVm
-										b2.use SyncFolders
+                    b2.use SyncedFolderCleanup
+                    b2.use SyncedFolders
 									elsif env2[:result] == :file_not_found
 										b2.use MessageFileNotFound
 									elsif env2[:result] == :server_upload_error
@@ -64,7 +67,8 @@ module VagrantPlugins
 										if env2[:result] == :ok
 											b2.use CreateVm
 											b2.use StartVm
-											b2.use SyncFolders
+                      b2.use SyncedFolderCleanup
+                      b2.use SyncedFolders
 										elsif env2[:result] == :file_not_found
 											b2.use MessageFileNotFound
 										elsif env2[:result] == :server_upload_error
@@ -78,7 +82,8 @@ module VagrantPlugins
 											b2.use AdjustForwardedPortParams
 											b2.use ConfigClone
 											b2.use StartVm
-											b2.use SyncFolders
+                      b2.use SyncedFolderCleanup
+                      b2.use SyncedFolders
 										elsif env2[:result] == :file_not_found
 											b2.use MessageFileNotFound
 										elsif env2[:result] == :server_upload_error
@@ -103,7 +108,8 @@ module VagrantPlugins
 								b2.use MessageNotRunning
 							else
 								b2.use Provision
-								b2.use SyncFolders
+                b2.use SyncedFolderCleanup
+                b2.use SyncedFolders
 							end
 						end
 					else
@@ -233,9 +239,9 @@ module VagrantPlugins
 		autoload :StopVm, action_root.join('stop_vm')
 		autoload :ShutdownVm, action_root.join('shutdown_vm')
 		autoload :DestroyVm, action_root.join('destroy_vm')
-		# autoload :CleanupAfterDestroy, action_root.join('cleanup_after_destroy')
 		autoload :ReadSSHInfo, action_root.join('read_ssh_info')
-		autoload :SyncFolders, action_root.join('sync_folders')
+    autoload :SyncedFolders, 'vagrant/action/builtin/synced_folders'
+    autoload :SyncedFolderCleanup, 'vagrant/action/builtin/synced_folder_cleanup'
 		autoload :UploadTemplateFile, action_root.join('upload_template_file')
 		autoload :UploadIsoFile, action_root.join('upload_iso_file')
 
