@@ -127,7 +127,7 @@ module VagrantPlugins
           else
             puts "Failed to clone VM. Retrying..."
             retries -= 1
-            sleep 5
+            sleep rand(5..10) # random sleep time between 5 and 10 seconds
           end
         end
         if retries == 0
