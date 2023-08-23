@@ -118,8 +118,22 @@ module VagrantPlugins
         params.delete(:description)
         params.delete(:memory)
         params.delete(:net0)
-        response = post "/nodes/#{node}/#{vm_type}/#{vm_id}/clone", params
-        wait_for_completion task_response: response, timeout_message: 'vagrant_proxmox.errors.create_vm_timeout'
+        retries = 5
+        while retries > 0
+          response = post "/nodes/#{node}/#{vm_type}/#{vm_id}/clone", params
+          wait_response = wait_for_completion task_response: response, timeout_message: 'vagrant_proxmox.errors.create_vm_timeout'
+          if wait_response == "OK"
+            break
+          else
+            puts "Failed to clone VM. Retrying..."
+            retries -= 1
+            sleep 5
+          end
+        end
+        if retries == 0
+          puts "Failed to clone VM after multiple retries."
+        end
+        wait_response
       end
 
       def config_clone(node: required('node'), vm_type: required('node'), params: required('params'))
