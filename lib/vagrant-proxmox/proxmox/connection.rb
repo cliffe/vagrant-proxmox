@@ -25,7 +25,7 @@ module VagrantPlugins
         @vm_id_range = opts[:vm_id_range] || (900..999)
         @task_timeout = opts[:task_timeout] || 600
         @task_status_check_interval = opts[:task_status_check_interval] || 2
-        @imgcopy_timeout = opts[:imgcopy_timeout] || 600
+        @imgcopy_timeout = opts[:imgcopy_timeout] || 1200
         @vm_info_cache = {}
       end
 
@@ -60,7 +60,7 @@ module VagrantPlugins
         task_upid = task_response[:data]
         timeout = task_timeout
         task_type = /UPID:.*?:.*?:.*?:.*?:(.*)?:.*?:.*?:/.match(task_upid)[1]
-        timeout = imgcopy_timeout if task_type == 'imgcopy'
+        timeout = imgcopy_timeout if task_type == 'imgcopy' || task_type == 'qmclone'
         begin
           retryable(on: VagrantPlugins::Proxmox::ProxmoxTaskNotFinished,
                     tries: timeout / task_status_check_interval + 1,
@@ -127,7 +127,7 @@ module VagrantPlugins
           else
             puts "Failed to clone VM. Retrying..."
             retries -= 1
-            sleep rand(5..10) # random sleep time between 5 and 10 seconds
+            sleep rand(5..30) # random sleep time
           end
         end
         if retries == 0
