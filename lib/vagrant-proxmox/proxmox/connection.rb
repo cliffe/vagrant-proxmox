@@ -3,6 +3,7 @@ require 'rest-client'
 require 'retryable'
 require 'required_parameters'
 require 'json'
+require 'fileutils'
 # require 'irb'
 
 
@@ -108,32 +109,65 @@ module VagrantPlugins
       end
 
       def clone_vm(node: required('node'), vm_type: required('node'), params: required('params'))
-        vm_id = params[:vmid]
-        params.delete(:vmid)
-        params.delete(:ostype)
-        params.delete(:ide2)
-        params.delete(:sata0)
-        params.delete(:sockets)
-        params.delete(:cores)
-        params.delete(:description)
-        params.delete(:memory)
-        params.delete(:net0)
-        retries = 5
-        while retries > 0
-          response = post "/nodes/#{node}/#{vm_type}/#{vm_id}/clone", params
-          wait_response = wait_for_completion task_response: response, timeout_message: 'vagrant_proxmox.errors.create_vm_timeout'
-          if wait_response == "OK"
-            break
-          else
-            puts "Failed to clone VM. Retrying..."
-            retries -= 1
-            sleep 5
+        # We get locking errors from Proxmox when provisioning multiple clones at once
+        lock_file_path = '/tmp/clone_vm_lock'
+        # Get the exclusive lock
+        File.open(lock_file_path, File::CREAT) do |file|
+          acquired_lock = file.flock(File::LOCK_EX | File::LOCK_NB)  # Try to acquire an exclusive lock without blocking
+          # don't continue until we have the lock
+          lock_timeout = 1200 # after 30 mins sod it off and delete the lock
+          sleep_interval = 1
+          unless acquired_lock
+            start_time = Time.now
+            loop do
+              break if file.flock(File::LOCK_EX | File::LOCK_NB)  # Break if the lock is acquired
+              elapsed_time = Time.now - start_time
+              if elapsed_time % 5 == 0
+                puts "Waiting for lock: #{elapsed_time.round} seconds waiting..."
+              end
+
+              # if it takes too long, then delete the lock and try again
+              if elapsed_time >= lock_timeout
+                puts "Timeout: Unable to acquire the lock within #{lock_timeout} seconds. Deleting lock file."
+                File.delete(lock_file_path) if File.exist?(lock_file_path)
+              end
+
+              sleep sleep_interval
+            end
           end
+
+          # Critical section
+          vm_id = params[:vmid]
+          params.delete(:vmid)
+          params.delete(:ostype)
+          params.delete(:ide2)
+          params.delete(:sata0)
+          params.delete(:sockets)
+          params.delete(:cores)
+          params.delete(:description)
+          params.delete(:memory)
+          params.delete(:net0)
+          retries = 30
+          while retries > 0
+            response = post "/nodes/#{node}/#{vm_type}/#{vm_id}/clone", params
+            wait_response = wait_for_completion task_response: response, timeout_message: 'vagrant_proxmox.errors.create_vm_timeout'
+            if wait_response == "OK"
+              break
+            else
+              puts "Failed to clone VM. Retrying..."
+              retries -= 1
+              sleep rand(20..40) # random sleep time between 5 and 10 seconds
+            end
+          end
+          if retries == 0
+            puts "Failed to clone VM after multiple retries."
+          end
+
+          # Release the lock
+          file.flock(File::LOCK_UN)
+
+          wait_response
         end
-        if retries == 0
-          puts "Failed to clone VM after multiple retries."
-        end
-        wait_response
       end
 
       def config_clone(node: required('node'), vm_type: required('node'), params: required('params'))
@@ -182,9 +216,47 @@ module VagrantPlugins
       end
 
       def get_qemu_template_id(template)
-        response = get '/cluster/resources?type=vm'
-        found_ids = response[:data].select { |vm| vm[:type] == 'qemu' }.select { |vm| vm[:template] == 1 }.select { |vm| vm[:name] == template }.map { |vm| vm[:vmid] }
-        found_ids.empty? ? raise(VagrantPlugins::Proxmox::Errors::NoTemplateAvailable) : found_ids.first
+        # Check if the cache file exists
+        cache_file_path = '/tmp/template_ids_cache.json'
+        template_cache = {}
+
+        # Attempt to acquire an exclusive lock on the cache file
+        File.open(cache_file_path, File::RDWR | File::CREAT, 0644) do |file|
+          file.flock(File::LOCK_EX)
+
+          if File.exist?(cache_file_path)
+            content = file.read
+            template_cache = JSON.parse(content) unless content.empty?
+            puts "Cache loaded from #{cache_file_path}: #{template_cache}"
+            return template_cache[template] if template_cache&.key?(template)
+          else
+            puts "Cache file #{cache_file_path} not found."
+          end
+
+          # If the template is not found in the cache, fetch from the API
+          response = get '/cluster/resources?type=vm'
+
+          # Update cache and write it back to file
+          found_ids = response[:data].select { |vm| vm[:type] == 'qemu' }.select { |vm| vm[:template] == 1 }.select { |vm| vm[:name] == template }.map { |vm| vm[:vmid] }
+          puts "Found IDs from API: #{found_ids}"
+
+          if found_ids.empty?
+            puts "No template ID found for '#{template}'."
+            raise(VagrantPlugins::Proxmox::Errors::NoTemplateAvailable)
+          else
+            template_id = found_ids.first
+            template_cache[template] = template_id
+            puts "Updating cache: #{template_cache}"
+
+            # Rewind, write, and truncate to update the cache file
+            file.rewind
+            file.write(JSON.generate(template_cache))
+            file.truncate(file.pos)
+
+            puts "Cache written to #{cache_file_path}."
+            return template_id
+          end
+        end
       end
 
       def upload_file(file, content_type: required('content_type'), node: required('node'), storage: required('storage'), replace: false)
