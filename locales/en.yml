@@ -96,7 +96,7 @@ en:
       vm_configure_error: |-
         Invalid box configuration
 
-        Invalid-Config: %{error_msg}
+        Error: %{error_msg}
       internal_plugin_error: |-
         You've found a bug! Please create a new issue at https://github.com/lehn-etracker/vagrant-proxmox/issues
 

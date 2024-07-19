@@ -20,21 +20,28 @@ module VagrantPlugins
 					node = env[:proxmox_selected_node]
 					vm_id = nil
 
+					env[:ui].detail "Configuring cloned VM"
 					begin
-						vm_id = env[:machine].id.split("/").last
-						@node_ip = connection(env).get_node_ip(node, 'vmbr0') if config.vm_type == :qemu
+						vm_id = env[:machine].id&.split("/")&.last
+						if vm_id.nil?
+						raise VagrantPlugins::Proxmox::Errors::VMConfigError, 
+							error_msg: "Unable to determine VM ID"
+						end
+						env[:ui].detail "Getting node ip"
+						@node_ip = connection(env).get_node_ip(node, 'vmbr4') if config.vm_type == :qemu
+						env[:ui].detail "Getting guest port"
 						@guest_port = sprintf("22%03d", vm_id.to_i).to_s
 					rescue StandardError => e
-						raise VagrantPlugins::Proxmox::Errors::VMConfigError, proxmox_exit_status: e.message
+						raise VagrantPlugins::Proxmox::Errors::VMConfigError, error_msg: e.message
 					end
 
 					begin
 						template_config = connection(env).get_vm_config node: node, vm_id: vm_id, vm_type: config.vm_type
 						params = create_params_qemu(config, env, vm_id, template_config)
 						exit_status = connection(env).config_clone node: node, vm_type: config.vm_type, params: params
-						exit_status == 'OK' ? exit_status : raise(VagrantPlugins::Proxmox::Errors::ProxmoxTaskFailed, proxmox_exit_status: exit_status)
+						exit_status == 'OK' ? exit_status : raise(VagrantPlugins::Proxmox::Errors::VMConfigError, error_msg: exit_status)
 					rescue StandardError => e
-						raise VagrantPlugins::Proxmox::Errors::VMConfigError, proxmox_exit_status: e.message
+						raise VagrantPlugins::Proxmox::Errors::VMConfigError, error_msg: e.message
 					end
 
 					env[:ui].info I18n.t('vagrant_proxmox.done')
