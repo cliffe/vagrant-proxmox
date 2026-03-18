@@ -97,6 +97,10 @@ en:
         Invalid box configuration
 
         Error: %{error_msg}
+      vm_network_error: |-
+        Failed to configure VM network interfaces
+
+        Error: %{error_msg}
       internal_plugin_error: |-
         You've found a bug! Please create a new issue at https://github.com/lehn-etracker/vagrant-proxmox/issues
 
@@ -122,3 +126,4 @@ en:
     stopping_vm: 'Stopping the virtual machine...'
     waiting_for_ssh_connection: 'Waiting for SSH connection...'
     cloning_vm: 'Cloning the VM...'
+    configuring_networks: 'Configuring VM network interfaces...'

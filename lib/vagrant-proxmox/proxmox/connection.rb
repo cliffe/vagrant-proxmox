@@ -79,9 +79,8 @@ module VagrantPlugins
         wait_for_completion task_response: response, timeout_message: 'vagrant_proxmox.errors.destroy_vm_timeout'
       end
 
-      def qemu_agent_get_ip(vm_id, node)
+      def qemu_agent_get_ip(vm_id, node, management_mac = nil)
         begin
-          # binding.irb
           response = get "/nodes/#{node}/qemu/#{vm_id}/agent/network-get-interfaces"
         rescue ApiError::ServerError
           return nil
@@ -90,13 +89,14 @@ module VagrantPlugins
         rescue VagrantPlugins::Proxmox::ApiError::ServerError
           return nil
         end
-        # select the first nic (0 = lo, 1 = first nic)
         response.dig(:data, :result).each do |nic|
+          if management_mac
+            next unless nic[:"hardware-address"]&.downcase == management_mac.downcase
+          end
           nic.dig(:"ip-addresses").each do |ip_addresses_block|
-            # find an IPv4 address and return it
             if ip_addresses_block.dig(:"ip-address-type") == "ipv4"
               ip = ip_addresses_block.dig(:"ip-address")
-              return ip if ip != "127.0.0.1"
+              return ip if ip != "127.0.0.1" && !ip.start_with?("169.254.")
             end
           end
         end

@@ -40,6 +40,10 @@ module VagrantPlugins
         error_key :vm_configure_error
       end
 
+      class VMNetworkError < VagrantProxmoxError
+        error_key :vm_network_error
+      end
+
       class VMDestroyError < VagrantProxmoxError
         error_key :vm_destroy_error
       end

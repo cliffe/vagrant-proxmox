@@ -67,6 +67,7 @@ module VagrantPlugins
 										if env2[:result] == :ok
 											b2.use CreateVm
 											b2.use StartVm
+											b2.use ConfigureNetworksGuest
                       b2.use SyncedFolderCleanup
                       b2.use SyncedFolders
 										elsif env2[:result] == :file_not_found
@@ -81,7 +82,9 @@ module VagrantPlugins
 										if env2[:result]
 											b2.use AdjustForwardedPortParams
 											b2.use ConfigClone
+											b2.use ConfigureNetworks
 											b2.use StartVm
+											b2.use ConfigureNetworksGuest
                       b2.use SyncedFolderCleanup
                       b2.use SyncedFolders
 										elsif env2[:result] == :file_not_found
@@ -235,6 +238,8 @@ module VagrantPlugins
 		autoload :CloneVm, action_root.join('clone_vm')
 		autoload :AdjustForwardedPortParams, action_root.join('adjust_forwarded_port_params')
 		autoload :ConfigClone, action_root.join('config_clone')
+		autoload :ConfigureNetworks, action_root.join('configure_networks')
+		autoload :ConfigureNetworksGuest, action_root.join('configure_networks')
 		autoload :StartVm, action_root.join('start_vm')
 		autoload :StopVm, action_root.join('stop_vm')
 		autoload :ShutdownVm, action_root.join('shutdown_vm')
