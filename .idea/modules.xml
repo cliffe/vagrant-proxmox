@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/vagrant-proxmox.iml" filepath="$PROJECT_DIR$/vagrant-proxmox.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/vagrant-proxmox-0.3.0.iml" filepath="$PROJECT_DIR$/.idea/vagrant-proxmox-0.3.0.iml" />
     </modules>
   </component>
 </project>

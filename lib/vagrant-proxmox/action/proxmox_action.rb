@@ -13,13 +13,17 @@ module VagrantPlugins
           config = env[:machine].provider_config
           env[:ui].detail 'Getting IP address...'
           if config.vm_type == :qemu
-            if config.disable_adjust_forwarded_port = true
+            if config.disable_adjust_forwarded_port == true
               env[:ui].detail 'IP address via qemu agent...'
               node, vm_id = env[:machine].id.split '/'
-
-              connection(env).qemu_agent_get_ip vm_id, node
-
+              # Look up net0 MAC directly from Proxmox config
+              vm_config = connection(env).get_vm_config(node: node, vm_id: vm_id, vm_type: config.vm_type)
+              net0_string = vm_config[:net0].to_s
+              net0_mac_match = net0_string.match(/=([0-9A-Fa-f:]{17})/)
+              management_mac = net0_mac_match ? net0_mac_match[1] : nil
+              connection(env).qemu_agent_get_ip vm_id, node, management_mac
             else
+
               env[:machine].config.vm.networks.select \
                 { |type, _| type == :forwarded_port }.first[1][:host_ip] || nil
             end

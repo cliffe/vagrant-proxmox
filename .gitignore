@@ -34,3 +34,4 @@ atlassian-ide-plugin.xml
 example_box/.vagrant
 example_box/Vagrantfile
 
+*.iml
