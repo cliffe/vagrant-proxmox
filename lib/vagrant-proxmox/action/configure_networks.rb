@@ -80,6 +80,9 @@ module VagrantPlugins
               ip: opts[:ip],
               netmask: opts[:netmask] || '255.255.255.0',
               macaddress: opts[:mac],
+              gateway: opts[:proxmox_gateway],
+              dns_nameservers: opts[:proxmox_dns_nameservers],
+              routes: opts[:proxmox_routes] || [],
             }
             arr << net
             net_index += 1
@@ -208,8 +211,8 @@ module VagrantPlugins
       SHELL
                   machine.communicate.sudo(dhcp_script)
                 else
-                  script = linux_ip_script(nic_idx, net[:ip], net[:netmask])
-                  env[:ui].detail "  Configuring Linux NIC #{nic_idx}: #{net[:ip]}"
+                  script = linux_ip_script(nic_idx, net[:ip], net[:netmask], net[:gateway], net[:dns_nameservers], net[:routes])
+                  env[:ui].detail "  Configuring Linux NIC #{nic_idx}: #{net[:ip]}#{net[:gateway] ? " gw #{net[:gateway]}" : ""}#{net[:dns_nameservers] ? " dns #{net[:dns_nameservers]}" : ""}#{net[:routes].any? ? " routes #{net[:routes].join(', ')}" : ""}"
                   machine.communicate.sudo(script)
                 end
               end
@@ -260,8 +263,13 @@ module VagrantPlugins
 
         private
 
-        def linux_ip_script(nic_index, ip, netmask)
+        def linux_ip_script(nic_index, ip, netmask, gateway = nil, dns_nameservers = nil, routes = [])
           cidr = cidr_from_netmask(netmask)
+          gateway_line  = gateway         ? "\n    gateway #{gateway}"                 : nil
+          dns_line      = dns_nameservers ? "\n    dns-nameservers #{dns_nameservers}" : nil
+          route_lines   = (routes || []).map { |r| "\n    up ip route add #{r}" }.join
+
+          stanza_extras = [gateway_line, dns_line, route_lines].compact.reject(&:empty?).join
           <<~SHELL
             #!/bin/bash
             set -e
@@ -282,10 +290,10 @@ module VagrantPlugins
             auto $IFACE
             iface $IFACE inet static
                 address #{ip}
-                netmask #{netmask}
+                netmask #{netmask}#{stanza_extras}
             EOF
             ifdown "$IFACE" 2>/dev/null || true
-            ifup "$IFACE" 2>/dev/null || (ip addr add #{ip}/#{cidr} dev "$IFACE" && ip link set "$IFACE" up)
+            ifup "$IFACE" 2>/dev/null || (ip addr replace #{ip}/#{cidr} dev "$IFACE" && ip link set "$IFACE" up)
           SHELL
         end
 
